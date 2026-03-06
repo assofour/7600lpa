@@ -1,4 +1,4 @@
-# 7600ipa — SGP.22 LPA for SIM7600G-H
+# 7600lpa — SGP.22 LPA for SIM7600G-H
 
 A Python implementation of the **GSMA SGP.22 Local Profile Assistant (LPA)** that runs on a Raspberry Pi with a SIMCOM SIM7600G-H modem. Downloads, installs, enables, and manages eSIM profiles via AT+CSIM — no phone or PC/SC reader required.
 
@@ -40,8 +40,8 @@ SM-DP+ Server (go-esim)          Raspberry Pi + SIM7600G-H + 9eSIM card
 ### 1. Install
 
 ```bash
-git clone https://git.emmc.cc/edward/7600ipa.git
-cd 7600ipa
+git clone https://git.emmc.cc/edward/7600lpa.git
+cd 7600lpa
 pip install -r requirements.txt
 ```
 
@@ -155,7 +155,7 @@ General:
 ## Project Structure
 
 ```
-7600ipa/
+7600lpa/
 ├── download.py          # Main entry: profile download, enable, disable, delete, list
 ├── transport.py         # APDU transport (MockTransport, RealTransport, QmiTransport)
 ├── lpa_manager.py       # ISD-R selection, EID retrieval, eUICCInfo2
