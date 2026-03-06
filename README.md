@@ -7,7 +7,7 @@ A Python implementation of the **GSMA SGP.22 Local Profile Assistant (LPA)** tha
 Full end-to-end eSIM profile lifecycle:
 
 ```
-SM-DP+ Server (go-esim)          Raspberry Pi + SIM7600G-H + 9eSIM card
+SM-DP+ Server                    Raspberry Pi + SIM7600G-H + eUICC card
 ─────────────────────────         ────────────────────────────────────────
                                   1. SELECT ISD-R (logical channel)
                                   2. GetEUICCChallenge (BF2E)
@@ -22,7 +22,7 @@ SM-DP+ Server (go-esim)          Raspberry Pi + SIM7600G-H + 9eSIM card
                                   11. AT+CFUN=1,1 → modem reboots on new profile
 ```
 
-**Tested and working**: Surf Mobile profile via go-esim SM-DP+, roaming on T-Mobile LTE as "Wireless Panda", 166ms latency to google.com.
+**Tested and working**: eSIM profile download, enable, and LTE data connection with 166ms latency to google.com.
 
 ## Hardware
 
@@ -45,38 +45,20 @@ cd 7600lpa
 pip install -r requirements.txt
 ```
 
-### 2. Configure
+### 2. Download & Enable
 
-Copy and edit the config file. The QR code format is `LPA:1$<address>$<matching_id>`:
-
-```bash
-cp config.yaml.example config.yaml
-```
-
-```yaml
-dp_plus:
-  address: "smdp.example.com"       # SM-DP+ server
-
-profile:
-  matching_id: "YOUR-MATCHING-ID"   # from QR code
-
-transport:
-  mode: "real"
-  port: "/dev/ttyUSB2"              # your AT port
-```
-
-### 3. Download & Enable
-
-Download using a QR code / LPA activation code:
+Pass the LPA activation code from your eSIM QR code directly:
 ```bash
 # From QR code (format: LPA:1$<address>$<matchingId>)
 sudo python3 download.py --lpa 'LPA:1$smdp.example.com$MATCHING-ID' --no-ssl-verify
 
 # Or via separate flags
 sudo python3 download.py --smdp smdp.example.com --mid MATCHING-ID --no-ssl-verify
+```
 
-# Or from config.yaml (if already configured)
-sudo python3 download.py --no-ssl-verify
+Optionally, copy `config.yaml.example` to `config.yaml` to set defaults for transport port, logging, etc:
+```bash
+cp config.yaml.example config.yaml
 ```
 
 The `--no-ssl-verify` flag is needed because GSMA RSP2 Root CI certificates are not in the OS trust store.
@@ -90,7 +72,7 @@ echo 'AT+COPS?' | sudo socat - /dev/ttyUSB2,b115200,crnl
 # Expected: +COPS: 0,0,"Your Operator",7
 ```
 
-### 4. Profile Management
+### 3. Profile Management
 
 ```bash
 # List all installed profiles
@@ -107,7 +89,7 @@ sudo python3 download.py --disable 8955170230005315472
 sudo python3 download.py --delete 8955170230005315472
 ```
 
-### 5. Connect to Internet
+### 4. Connect to Internet
 
 ```bash
 # Stop ModemManager, start QMI data, configure wwan0
@@ -230,15 +212,15 @@ Each segment uses its own P2 counter. Intermediate blocks use P1=0x11, final blo
 ## eSIM Ecosystem
 
 ```
-9eSIM (card vendor)  →  Physical eUICC card (Kigen chip)
+eUICC card vendor    →  Physical eUICC card (removable eSIM)
                               ↕ SIM slot
-Panda Mobile (retailer) → Activation code (SM-DP+ address + MatchingID)
+eSIM retailer        →  Activation code (SM-DP+ address + MatchingID)
                               ↓
-go-esim (SM-DP+)     →  Profile download via SGP.22 ES9+
+SM-DP+ server        →  Profile download via SGP.22 ES9+
                               ↓
-Surf Mobile (MNO)    →  IMSI/Ki credentials inside the profile
+MNO / MVNO           →  IMSI/Ki credentials inside the profile
                               ↓
-T-Mobile (network)   →  LTE radio access via roaming agreement
+Radio network        →  LTE/5G access (direct or via roaming)
 ```
 
 ## Requirements
