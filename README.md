@@ -22,7 +22,7 @@ SM-DP+ Server                    Raspberry Pi + SIM7600G-H + eUICC card
                                   11. AT+CFUN=1,1 → modem reboots on new profile
 ```
 
-**Tested and working**: eSIM profile download, enable, and LTE data connection with 166ms latency to google.com.
+**Tested and working** with [Linksfield Networks](https://linksfield.net) eSIM and [Wireless Panda](https://wirelesspanda.com) in the United States. Full profile download, enable, and LTE data connection with 166ms latency to google.com.
 
 ## Hardware
 
