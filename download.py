@@ -818,13 +818,14 @@ def run_download(transport, smdp_address: str, matching_id: str,
         profiles_resp = es10b._store_data(_tlv(b"\xBF\x2D", b""))
         logger.info("Profile list: %d bytes: %s",
                      len(profiles_resp), profiles_resp.hex().upper()[:200])
-        # Extract ICCID (tag 5A) from response
+        # Extract ICCID (tag 5A) of the LAST profile — newly installed profile
+        # is appended at the end of the profile list
         iccid = b""
-        pos = profiles_resp.find(b"\x5A")
+        pos = profiles_resp.rfind(b"\x5A")
         if pos >= 0 and pos + 1 < len(profiles_resp):
             ilen = profiles_resp[pos + 1]
             iccid = profiles_resp[pos + 2: pos + 2 + ilen]
-            logger.info("Installed profile ICCID: %s", iccid.hex().upper())
+            logger.info("Newly installed profile ICCID: %s", iccid.hex().upper())
     except Exception as e:
         logger.warning("Could not get profile list: %s", e)
         iccid = b""
