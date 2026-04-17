@@ -812,23 +812,29 @@ def run_download(transport, smdp_address: str, matching_id: str,
     if bpp_result:
         logger.info("ProfileInstallationResult: %d bytes", len(bpp_result))
 
-    # ── 7c. Get profile list to find installed ICCID ─────────────────────────
-    logger.info("Step 7c   GET PROFILE LIST (BF2D)")
+    # ── 7c. Extract installed ICCID from ProfileInstallationResult ───────────
+    # Path: BF37 (PIR) → BF27 (PIR data) → BF2F (notificationMetadata) → 5A (iccid)
+    # Scanning the BF2D list for the first/last 5A is unreliable: 5A can appear
+    # as a data byte in unrelated TLV fields, and the list order of profiles is
+    # not defined by SGP.22 — some eUICCs return insertion order (oldest first),
+    # so neither the first nor the last 5A reliably identifies the new profile.
+    iccid = b""
     try:
-        profiles_resp = es10b._store_data(_tlv(b"\xBF\x2D", b""))
-        logger.info("Profile list: %d bytes: %s",
-                     len(profiles_resp), profiles_resp.hex().upper()[:200])
-        # Extract ICCID (tag 5A) of the LAST profile — newly installed profile
-        # is appended at the end of the profile list
+        iccid = _find_tag(bpp_result, 0xBF37, 0xBF27, 0xBF2F, 0x5A)
+    except Exception:
         iccid = b""
-        pos = profiles_resp.rfind(b"\x5A")
-        if pos >= 0 and pos + 1 < len(profiles_resp):
-            ilen = profiles_resp[pos + 1]
-            iccid = profiles_resp[pos + 2: pos + 2 + ilen]
-            logger.info("Newly installed profile ICCID: %s", iccid.hex().upper())
-    except Exception as e:
-        logger.warning("Could not get profile list: %s", e)
-        iccid = b""
+    if not iccid:
+        # Some eUICCs emit BF27 at top level without the BF37 wrapper
+        try:
+            iccid = _find_tag(bpp_result, 0xBF27, 0xBF2F, 0x5A)
+        except Exception:
+            iccid = b""
+    if iccid:
+        logger.info("Installed profile ICCID: %s (from ProfileInstallationResult)",
+                    iccid.hex().upper())
+    else:
+        logger.warning("Could not parse ICCID from ProfileInstallationResult — "
+                       "skipping auto-enable; use --enable <iccid> manually.")
 
     # ── 8. Enable Profile ─────────────────────────────────────────────────────
     logger.info("Step 8/8  ENABLE PROFILE")
