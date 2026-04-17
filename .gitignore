@@ -25,3 +25,6 @@ report_*.md
 
 # Claude
 .claude/
+
+# Serena MCP
+.serena/
